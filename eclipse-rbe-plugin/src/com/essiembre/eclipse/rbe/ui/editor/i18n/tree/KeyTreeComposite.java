@@ -41,6 +41,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Text;
 
@@ -318,15 +319,9 @@ public class KeyTreeComposite extends Composite {
         gridData.grabExcessHorizontalSpace = true;
 
         treeViewer = new TreeViewer(
-                this, SWT.SINGLE | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
-        treeViewer.setContentProvider(new KeyTreeContentProvider());
-        labelProvider = new KeyTreeLabelProvider();
-        treeViewer.setLabelProvider(labelProvider);
-        treeViewer.setUseHashlookup(true);
-        treeViewer.setInput(keyTree);
-        if (RBEPreferences.getKeyTreeExpanded()) {
-            treeViewer.expandAll();
-        }
+                this,  SWT.VIRTUAL | SWT.SINGLE | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
+        
+        treeViewer.getControl().setRedraw(false);
         treeViewer.getTree().setLayoutData(gridData);      
         treeViewer.getTree().addKeyListener(new KeyAdapter() {
             public void keyReleased(KeyEvent event) {
@@ -385,7 +380,28 @@ public class KeyTreeComposite extends Composite {
         
         treeviewerContributor = new TreeViewerContributor(keyTree, treeViewer);
         treeviewerContributor.createControl(this);
+        
+        if (RBEPreferences.getKeyTreeExpanded()) {
+            treeViewer.expandAll();
+        }
+        treeViewer.getControl().setRedraw(true);
 
+        Display.getDefault().asyncExec(new Runnable() {
+        	
+        	 public void run() {
+        		 
+        		 	treeViewer.getControl().setRedraw(false);
+        		 	treeViewer.setContentProvider(new KeyTreeContentProvider());
+        	        labelProvider = new KeyTreeLabelProvider();
+        	        treeViewer.setLabelProvider(labelProvider);
+        	        treeViewer.setUseHashlookup(true);
+        	        treeViewer.setInput(keyTree);
+        	        treeViewer.getControl().setRedraw(true);
+        	        
+        	 }
+        	 
+        });
+        
     }
     
     /**
