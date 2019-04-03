@@ -15,6 +15,8 @@
  */
 package com.essiembre.eclipse.rbe.model.bundle;
 
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleEntry;
+
 /**
  * Objects implementing this interface can act as a visitor to any 
  * bundle-related resource implementing <code>IBundleVisitable</code>.

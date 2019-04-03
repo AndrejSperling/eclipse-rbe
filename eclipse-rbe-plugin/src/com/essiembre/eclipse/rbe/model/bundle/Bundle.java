@@ -16,8 +16,10 @@
 package com.essiembre.eclipse.rbe.model.bundle;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -25,6 +27,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.essiembre.eclipse.rbe.model.Model;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleEntry;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleKeyValueEntry;
 
 
 /**
@@ -38,7 +42,7 @@ public class Bundle extends Model implements IBundleVisitable {
     /** Bundle locale. */
     private Locale locale;
     /** Bundle entries (key=key value=BundleEntry). */
-    private final Map<String, BundleEntry> entries = new HashMap<>();
+    private final Map<String, BundleEntry> entries = new LinkedHashMap<>();
     /** Bundle group (parent). */
     private BundleGroup bundleGroup;
     
@@ -100,11 +104,16 @@ public class Bundle extends Model implements IBundleVisitable {
         return (BundleEntry) entries.get(key);    
     }
     
+    public Collection<BundleEntry> getEntries() {
+    	return entries.values();
+    }
+    
     /**
      * Adds a bundle entry to this bundle.
      * @param entry the bundle entry to add
      */
     protected void addEntry(BundleEntry entry) {
+    	
         BundleEntry oldEntry = (BundleEntry) entries.get(entry.getKey());
         if (oldEntry != null) {
             if (!oldEntry.equals(entry)) {
@@ -119,6 +128,7 @@ public class Bundle extends Model implements IBundleVisitable {
             entry.setLocale(locale);
             fireAdd(entry);
         }
+        
     }
     
     /**
@@ -137,11 +147,11 @@ public class Bundle extends Model implements IBundleVisitable {
      * @param newKey the new name for the bundle entry
      */
     protected void renameKey(String oldKey, String newKey) {
-        BundleEntry oldEntry = (BundleEntry) entries.get(oldKey);
-        if (oldEntry != null) {
-            BundleEntry newEntry = new BundleEntry(
-                    newKey, oldEntry.getValue(), oldEntry.getComment());
-            removeEntry(oldEntry);
+        final BundleEntry oldEntry = (BundleEntry) entries.get(oldKey);
+        if (oldEntry != null && oldEntry instanceof BundleKeyValueEntry) {
+        	final BundleKeyValueEntry old = (BundleKeyValueEntry) oldEntry;
+        	final BundleKeyValueEntry newEntry = new BundleKeyValueEntry(newKey, old.getValue(), old.isCommented());
+        	removeEntry(oldEntry);
             addEntry(newEntry);
         }
     }
@@ -151,24 +161,27 @@ public class Bundle extends Model implements IBundleVisitable {
      * @param key key of bundle entry to be commented
      */
     protected void commentKey(String key) {
+    	commentKey(key, true);
+    }
+    
+    protected void commentKey(String key, boolean isCommented) {
         BundleEntry entry = (BundleEntry) entries.get(key);
-        if (entry != null) {
-            BundleEntry newEntry = new BundleEntry(
-                    key, entry.getValue(), entry.getComment(), true);
-            addEntry(newEntry);
+        if (entry != null && entry instanceof BundleKeyValueEntry) {
+        	
+        	((BundleKeyValueEntry) entry).setCommented(isCommented);
+        	fireModify(entry);
+        	
+            //BundleEntry newEntry = new BundleEntry(key, entry.getValue(), entry.getComment(), true);
+            //addEntry(newEntry);
         }
     }
+    
     /**
      * Uncomments a bundle entry.
      * @param key key of bundle entry to be uncommented
      */
     protected void uncommentKey(String key) {
-        BundleEntry entry = (BundleEntry) entries.get(key);
-        if (entry != null) {
-            BundleEntry newEntry = new BundleEntry(
-                    key, entry.getValue(), entry.getComment(), false);
-            addEntry(newEntry);
-        }
+    	commentKey(key, false);
     }
     
     /**
@@ -178,11 +191,14 @@ public class Bundle extends Model implements IBundleVisitable {
      */
     protected void copyKey(String origKey, String newKey) {
         BundleEntry origEntry = (BundleEntry) entries.get(origKey);
-        if (origEntry != null) {
-            BundleEntry newEntry = new BundleEntry(
-                    newKey, origEntry.getValue(), origEntry.getComment());
-            addEntry(newEntry);
-        }
+        
+     // TODO-as 
+        
+//        if (origEntry != null) {
+//            BundleEntry newEntry = new BundleEntry(
+//                    newKey, origEntry.getValue(), origEntry.getComment());
+//            addEntry(newEntry);
+//        }
     }
     
     /**
@@ -247,4 +263,12 @@ public class Bundle extends Model implements IBundleVisitable {
             addEntry(entry);
         }
     }
+   private  boolean modified = false;
+	public void setModified() {
+		modified = true;
+	}
+	
+	public boolean isModified() {
+		return modified;
+	}
 }

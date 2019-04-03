@@ -57,8 +57,9 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.texteditor.ITextEditor;
 
 import com.essiembre.eclipse.rbe.RBEPlugin;
-import com.essiembre.eclipse.rbe.model.bundle.BundleEntry;
 import com.essiembre.eclipse.rbe.model.bundle.BundleGroup;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleEntry;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleKeyValueEntry;
 import com.essiembre.eclipse.rbe.model.bundle.visitors.DuplicateValuesVisitor;
 import com.essiembre.eclipse.rbe.model.bundle.visitors.SimilarValuesVisitor;
 import com.essiembre.eclipse.rbe.model.utils.LevenshteinDistanceAnalyzer;
@@ -153,26 +154,31 @@ public class BundleEntryComposite extends Composite {
      * Update bundles if the value of the active key changed.
      */
     public void updateBundleOnChanges(){
-        if (activeKey != null) {
-            BundleGroup bundleGroup = resourceManager.getBundleGroup();
-            BundleEntry entry = bundleGroup.getBundleEntry(locale, activeKey);
-            boolean commentedSelected = commentedCheckbox.getSelection();
-            String textBoxValue = textViewer.getDocument().get();
-
-            if (entry == null || !textBoxValue.equals(entry.getValue())
-                    || entry.isCommented() != commentedSelected) {
-                String comment = null;
-                if (entry != null) {
-                    comment = entry.getComment();
+        
+    	if (activeKey != null && resourceManager != null) {
+        	
+            final BundleGroup bundleGroup = resourceManager.getBundleGroup();
+            final BundleEntry bundleEntry = bundleGroup.getBundleEntry(locale, activeKey);
+            
+            if(bundleEntry instanceof BundleKeyValueEntry) {
+            	
+            	final boolean commentedSelected = commentedCheckbox.getSelection();
+                final String textBoxValue = textViewer.getDocument().get();
+            	final BundleKeyValueEntry entry = (BundleKeyValueEntry) bundleEntry;
+            	
+            	entry.setCommented(commentedSelected);
+                entry.setValue(textBoxValue);
+                
+                if(entry.isModified()) {
+                	bundleGroup.fireModify(entry.getBundle());
                 }
-                bundleGroup.addBundleEntry(locale, new BundleEntry(
-                        activeKey, 
-                        textViewer.getDocument().get(), 
-                        comment, 
-                        commentedSelected));
-            }
-        }
+            	
+            }            
+        
+    	}
+        
     }
+    
 
     /**
      * @see org.eclipse.swt.widgets.Widget#dispose()
@@ -217,6 +223,7 @@ public class BundleEntryComposite extends Composite {
      * @param key key used to grab value
      */
     public void refresh(String key) {
+    	
         activeKey = key;
         BundleGroup bundleGroup = resourceManager.getBundleGroup();
         StyledText textBox = textViewer.getTextWidget();
@@ -224,16 +231,21 @@ public class BundleEntryComposite extends Composite {
         IDocument document = new Document();
         
         if (key != null && bundleGroup.isKey(key)) {
-            BundleEntry bundleEntry = bundleGroup.getBundleEntry(locale, key);
+        	           
             SourceEditor sourceEditor = resourceManager.getSourceEditor(locale);
+            BundleEntry bundleEntry = bundleGroup.getBundleEntry(locale, key);
+            
             if (bundleEntry == null) {
                 document.set("");
                 commentedCheckbox.setSelection(false);
-            } else {
-                commentedCheckbox.setSelection(bundleEntry.isCommented());
-                String value = bundleEntry.getValue();
+            } else if(bundleEntry instanceof BundleKeyValueEntry) {
+            	
+                commentedCheckbox.setSelection(((BundleKeyValueEntry) bundleEntry).isCommented());
+                String value = ((BundleKeyValueEntry) bundleEntry).getValue();
                 document.set(value);
+                
             }
+            
             commentedCheckbox.setEnabled(!sourceEditor.isReadOnly());
             textBox.setEnabled(!sourceEditor.isReadOnly());
             textBox.setEditable(true);
@@ -607,15 +619,12 @@ public class BundleEntryComposite extends Composite {
                 } else if (isKeyCombination(event, SWT.CTRL, 'y')) {
                     undoManager.redo();
                 } else if (isKeyCombination(event, SWT.CTRL, 'a')) {
-                    textViewer.setSelectedRange(
-                            0, textViewer.getDocument().getLength());
+                    textViewer.setSelectedRange(0, textViewer.getDocument().getLength());
                 } else {                    
-                    StyledText eventBox = (StyledText) event.widget;
-                    final ITextEditor editor = 
-                            resourceManager.getSourceEditor(locale).getEditor();
+                    final StyledText eventBox = (StyledText) event.widget;
+                    final ITextEditor editor = resourceManager.getSourceEditor(locale).getEditor();
                     // Text field has changed: make editor dirty if not already
-                    if (textBeforeUpdate != null 
-                            && !textBeforeUpdate.equals(eventBox.getText())) {
+                    if (textBeforeUpdate != null  && !textBeforeUpdate.equals(eventBox.getText())) {
                         // Make the editor dirty if not already.  If it is, 
                         // we wait until field focus lost (or save) to 
                         // update it completely.

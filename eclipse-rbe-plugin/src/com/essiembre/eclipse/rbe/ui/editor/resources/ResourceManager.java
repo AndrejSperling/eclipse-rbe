@@ -80,10 +80,10 @@ public class ResourceManager {
             public void remove(DeltaEvent event) {} // do nothing
             public void modify(DeltaEvent event) {
                 final Bundle bundle = (Bundle) event.receiver();
-                final SourceEditor editor = 
-                        (SourceEditor) sourceEditors.get(bundle.getLocale());
-                String editorContent = PropertiesGenerator.generate(bundle);
-                editor.setContent(editorContent);
+                if(bundle.isModified()) {
+                	final SourceEditor editor = (SourceEditor) sourceEditors.get(bundle.getLocale());
+					editor.setContent(PropertiesGenerator.generate(bundle));
+                }
             }
             public void select(DeltaEvent event) {
             }

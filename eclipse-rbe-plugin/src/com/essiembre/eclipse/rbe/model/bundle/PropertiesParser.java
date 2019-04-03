@@ -15,9 +15,14 @@
  */
 package com.essiembre.eclipse.rbe.model.bundle;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.regex.Pattern;
 
 import com.essiembre.eclipse.rbe.RBEPlugin;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleKeyValueEntry;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleValueEntry;
 import com.essiembre.eclipse.rbe.model.workbench.RBEPreferences;
 
 /**
@@ -27,24 +32,14 @@ import com.essiembre.eclipse.rbe.model.workbench.RBEPreferences;
 public final class PropertiesParser {
 
     /** System line separator. */
-    private static final String SYSTEM_LINE_SEPARATOR = 
-            System.getProperty("line.separator");
+    public static final String SYSTEM_LINE_SEPARATOR = System.getProperty("line.separator");
     
     /** Characters accepted as key value separators. */
     private static final String KEY_VALUE_SEPARATORS = "=:";
-    
-    private static final Pattern PATTERN_LINE_BREAK = 
-            Pattern.compile("\r\n|\r|\n");
-    private static final Pattern PATTERN_IS_REGULAR_LINE = 
-            Pattern.compile("^[^#!].*");
-    private static final Pattern PATTERN_IS_COMMENTED_LINE = 
-            Pattern.compile("^##[^#].*");
-    private static final Pattern PATTERN_LEADING_SPACE = 
-            Pattern.compile("^\\s*");
-    private static final Pattern PATTERN_COMMENT_START = Pattern.compile("^##");
+    private static final Pattern PATTERN_IS_REGULAR_LINE = Pattern.compile("^[^#!].*");
+    private static final Pattern PATTERN_IS_COMMENTED_LINE = Pattern.compile("^##[^#].*");
     private static final Pattern PATTERN_BACKSLASH_R = Pattern.compile("\\\\r");
     private static final Pattern PATTERN_BACKSLASH_N = Pattern.compile("\\\\n");
-
     
     /**
      * Constructor.
@@ -62,92 +57,60 @@ public final class PropertiesParser {
      * @return a new bundle
      */
     public static Bundle parse(String properties) {
-        Bundle bundle = new Bundle();
-        String[] lines = PATTERN_LINE_BREAK.split(properties);
+    	
+        final Bundle bundle = new Bundle();
+        final BufferedReader bf = new BufferedReader(new StringReader(properties));
+        final StringBuffer lineBuf = new StringBuffer();
         
-        boolean doneWithFileComment = false;
-        StringBuffer fileComment = new StringBuffer();
-        StringBuffer lineComment = new StringBuffer();
-        StringBuffer lineBuf = new StringBuffer();
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i];
-            lineBuf.setLength(0);
-            lineBuf.append(line);
-        
-            int equalPosition = findKeyValueSeparator(line);
-            boolean isRegularLine = 
-                    PATTERN_IS_REGULAR_LINE.matcher(line).matches();
-            boolean isCommentedLine = doneWithFileComment 
-                    && PATTERN_IS_COMMENTED_LINE.matcher(line).matches();
-            
-            // parse regular and commented lines
-            if (equalPosition >= 1 && (isRegularLine || isCommentedLine)) {
-                doneWithFileComment = true;
-                String comment = "";
-                if (lineComment.length() > 0) {
-                    comment = lineComment.toString();
-                    lineComment.setLength(0);
-                }
+        String line;
+        try {
+			while ((line = bf.readLine()) != null) {
+				
+	            final int equalPosition = findKeyValueSeparator(line);
+	            final boolean isRegularLine = PATTERN_IS_REGULAR_LINE.matcher(line).matches();
+	            final boolean isCommentedLine = PATTERN_IS_COMMENTED_LINE.matcher(line).matches();
+	            
+	            // parse regular and commented lines
+	            if (equalPosition >= 1 && (isRegularLine || isCommentedLine)) {
 
-                if (isCommentedLine) {
-                    lineBuf.delete(0, 2); // remove ##
-                    equalPosition -= 2;
-                }
-                String backslash = "\\";
-                while (lineBuf.lastIndexOf(backslash) == lineBuf.length() -1) {
-                    int lineBreakPosition = lineBuf.lastIndexOf(backslash);
-                    lineBuf.replace(
-                            lineBreakPosition,
-                            lineBreakPosition + 1, "");
-                    if (++i < lines.length) {
-                        String wrappedLine = PATTERN_LEADING_SPACE.matcher(
-                                lines[i]).replaceFirst("");
-//                        String wrappedLine = lines[i].trim();
-                        if (isCommentedLine) {
-                            lineBuf.append(PATTERN_COMMENT_START.matcher(
-                                    wrappedLine).replaceFirst(""));
-                        } else {
-                            lineBuf.append(wrappedLine);
-                        }
-                    }
-                }
-                String key = lineBuf.substring(0, equalPosition).trim();
-                key = unescapeKey(key);
-                
-                String value = PATTERN_LEADING_SPACE.matcher(
-                        lineBuf.substring(equalPosition + 1)).replaceFirst("");
-//                String value = lineBuf.substring(equalPosition + 1).trim();
-                // Unescape leading spaces
-                if (value.startsWith("\\ ")) {
-                    value = value.substring(1);
-                }
-                
-                if (RBEPreferences.getConvertEncodedToUnicode()) {
-                    key = PropertiesParser.convertEncodedToUnicode(key);
-                    value = PropertiesParser.convertEncodedToUnicode(value);
-                } else {
-                    value = PATTERN_BACKSLASH_R.matcher(value).replaceAll("\r");
-                    value = PATTERN_BACKSLASH_N.matcher(value).replaceAll("\n");
-                }
-                bundle.addEntry(
-                        new BundleEntry(key, value, comment, isCommentedLine));
-            // parse comment line
-            } else if (lineBuf.length()>0 && 
-                    (lineBuf.charAt(0) == '#' || lineBuf.charAt(0) == '!')) {
-               if (!doneWithFileComment) {
-                    fileComment.append(lineBuf);
-                    fileComment.append(SYSTEM_LINE_SEPARATOR);
-                } else {
-                    lineComment.append(lineBuf);
-                    lineComment.append(SYSTEM_LINE_SEPARATOR);
-                }
-            // handle blank or unsupported line
-            } else {
-                doneWithFileComment = true;
-            }
-        }
-        bundle.setComment(fileComment.toString());
-        
+	            	lineBuf.setLength(0);
+	            	lineBuf.append(line);
+	            	
+	                String key = lineBuf.substring(0, equalPosition).trim();
+	                key = unescapeKey(key);
+	                
+	                String value = lineBuf.substring(equalPosition + 1).trim();
+
+	                // Unescape leading spaces
+	                if (value.startsWith("\\ ")) {
+	                    value = value.substring(1);
+	                }
+	                
+	                if (RBEPreferences.getConvertEncodedToUnicode()) {
+	                    key = PropertiesParser.convertEncodedToUnicode(key);
+	                    value = PropertiesParser.convertEncodedToUnicode(value);
+	                } else {
+	                    value = PATTERN_BACKSLASH_R.matcher(value).replaceAll("\r");
+	                    value = PATTERN_BACKSLASH_N.matcher(value).replaceAll("\n");
+	                }
+	                
+	                bundle.addEntry(new BundleKeyValueEntry(key, value, isCommentedLine));
+	                
+	            } else {
+	                bundle.addEntry(new BundleValueEntry((line == null || line.trim().isEmpty()) ? "" : line));
+	            }
+				
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				bf.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
         return bundle;
     }
     

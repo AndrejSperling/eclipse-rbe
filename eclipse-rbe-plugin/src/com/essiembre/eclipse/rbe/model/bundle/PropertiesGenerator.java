@@ -19,6 +19,9 @@ import java.util.Iterator;
 
 import org.eclipse.core.runtime.Platform;
 
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleEntry;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleKeyValueEntry;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleValueEntry;
 import com.essiembre.eclipse.rbe.model.workbench.RBEPreferences;
 
 /**
@@ -69,79 +72,43 @@ public final class PropertiesGenerator {
      * @return the generated string
      */
     public static String generate(Bundle bundle) {
-        String lineBreak = SYSTEM_LINE_SEP;
-        int numOfLineBreaks = RBEPreferences.getGroupLineBreaks();
-        StringBuffer text = new StringBuffer();
+    	
+    	final StringBuffer text = new StringBuffer();
+    	
+        if (RBEPreferences.getShowGenerator() ) {
+            text.append(GENERATED_BY);
+            text.append(SYSTEM_LINE_SEP);
+        }
 
-        // Header comment
-        String headComment = bundle.getComment();
-        if (headComment != null && headComment.length() > 0) {
-            if (RBEPreferences.getShowGenerator() 
-                    && !headComment.startsWith(GENERATED_BY)) {
-                text.append(GENERATED_BY);
-                text.append(SYSTEM_LINE_SEP);
-            }
-            text.append(headComment);
+    	for(final BundleEntry entry : bundle.getEntries()) {
+    		text.append(formatValue(entry.getLine()));
+    	}
+
+        return text.toString();
+    }
+    
+    private static String formatValue(String value) {
+    	
+    	 // escape backslashes
+        if (RBEPreferences.getConvertUnicodeToEncoded()) {
+            value = value.replaceAll("\\\\", "\\\\\\\\");
         }
         
-        // Format
-        String group = null;
-        int equalIndex = -1;
-        for (Iterator<String> iter = bundle.getKeys().iterator(); 
-                iter.hasNext();) {
-            BundleEntry bundleEntry = bundle.getEntry(iter.next());
-            String key = bundleEntry.getKey();
-            String value = bundleEntry.getValue(); 
-            String comment = bundleEntry.getComment();    
-            
-            if (value != null){
-                // escape backslashes
-                if (RBEPreferences.getConvertUnicodeToEncoded()) {
-                    value = value.replaceAll("\\\\", "\\\\\\\\");
-                }
-                
-                // handle new lines in value
-                if (RBEPreferences.getForceNewLineType()) {
-                    value = value.replaceAll(
-                            "\r\n|\r|\n", FORCED_LINE_SEP[
-                                    RBEPreferences.getNewLineType()]);
-                } else {
-                    value = value.replaceAll("\r", "\\\\r");
-                    value = value.replaceAll("\n", "\\\\n");
-                }
-            } else {
-                value = "";
+        // handle new lines in value
+        if (RBEPreferences.getForceNewLineType()) {
+            value = value.replaceAll(
+                    "\r\n|\r|\n", FORCED_LINE_SEP[RBEPreferences.getNewLineType()]);
+        } else {
+            value = value.replaceAll("\r", "\\\\r");
+            value = value.replaceAll("\n", "\\\\n");
+            if(!value.startsWith("#")) {
+            	value = value.replaceAll("\t", "\\\\t");
             }
-            
-            if (RBEPreferences.getKeepEmptyFields() || value.length() > 0) {
-                // handle group equal align and line break options
-                if (RBEPreferences.getGroupKeys()) {
-                    String newGroup = getKeyGroup(key);
-                    if (newGroup == null || !newGroup.equals(group)) {
-                        group = newGroup;
-                        equalIndex = getEqualIndex(key, group, bundle);
-                        for (int i = 0; i < numOfLineBreaks; i++) {
-                            text.append(lineBreak);
-                        }
-                    }
-                } else {
-                    equalIndex = getEqualIndex(key, null, bundle);
-                }
-                
-                // Build line
-                if (RBEPreferences.getConvertUnicodeToEncoded()) {
-                    key = PropertiesGenerator.convertUnicodeToEncoded(key);
-                    value = PropertiesGenerator.convertUnicodeToEncoded(value);
-                }
-                if (comment != null && comment.length() > 0) {
-                    text.append(comment);
-                }
-                appendKey(text, key, equalIndex, bundleEntry.isCommented());
-                appendValue(text, value, equalIndex, bundleEntry.isCommented());
-                text.append(lineBreak);
-            }
+            value = value.replace("\\\\/", "\\/");
+            value = value.replace("\\\\", "\\");
         }
-        return text.toString();
+        
+    	return value + "" + SYSTEM_LINE_SEP;
     }
         
     /**

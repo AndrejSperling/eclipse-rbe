@@ -16,8 +16,9 @@
 package com.essiembre.eclipse.rbe.model.tree.updater;
 
 
-import com.essiembre.eclipse.rbe.model.bundle.BundleEntry;
 import com.essiembre.eclipse.rbe.model.bundle.BundleGroup;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleEntry;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleKeyValueEntry;
 import com.essiembre.eclipse.rbe.model.tree.KeyTree;
 
 import java.util.Collection;
@@ -51,10 +52,12 @@ public class IncompletionUpdater extends KeyTreeUpdater {
         int        count    = 0;
         Iterator<BundleEntry>   iterator = entries.iterator();
         while(iterator.hasNext()) {
-            BundleEntry entry = iterator.next();
-            String      value = entry.getValue();
-            if((value != null) && (value.length() > 0)) {
-                count++;
+            final BundleEntry entry = iterator.next();
+            if(entry instanceof BundleKeyValueEntry) {
+	            String      value = ((BundleKeyValueEntry)entry).getValue();
+	            if((value != null) && (value.length() > 0)) {
+	                count++;
+	            }
             }
         }
         // we only delegate entries in case there are some incomplete ones

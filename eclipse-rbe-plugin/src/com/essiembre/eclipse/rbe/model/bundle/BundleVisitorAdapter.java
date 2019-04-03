@@ -15,6 +15,8 @@
  */
 package com.essiembre.eclipse.rbe.model.bundle;
 
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleEntry;
+
 /**
  * Convenience implementation of <code>IBundleVisitor</code> allowing to 
  * override only required methods.

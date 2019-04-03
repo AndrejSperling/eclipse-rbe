@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.UUID;
 
 import org.eclipse.jface.viewers.ViewerFilter;
 
@@ -28,8 +29,10 @@ import com.essiembre.eclipse.rbe.model.DeltaEvent;
 import com.essiembre.eclipse.rbe.model.IDeltaListener;
 import com.essiembre.eclipse.rbe.model.Model;
 import com.essiembre.eclipse.rbe.model.bundle.Bundle;
-import com.essiembre.eclipse.rbe.model.bundle.BundleEntry;
 import com.essiembre.eclipse.rbe.model.bundle.BundleGroup;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleEntry;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleKeyValueEntry;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleValueEntry;
 import com.essiembre.eclipse.rbe.model.tree.updater.KeyTreeUpdater;
 
 /**
@@ -38,6 +41,8 @@ import com.essiembre.eclipse.rbe.model.tree.updater.KeyTreeUpdater;
  * @author cuhiodtick
  */
 public class KeyTree extends Model implements IKeyTreeVisitable {
+	
+	public final static String BREAK_LINE_KEY = UUID.randomUUID().toString();
 
     /** Caching of key tree items (key=ID; value=KeyTreeItem). **/
     private final Map<String, KeyTreeItem> keyItemsCache = new TreeMap<String, KeyTreeItem>();
@@ -87,30 +92,47 @@ public class KeyTree extends Model implements IKeyTreeVisitable {
      * @param bundle the bundle to initialize
      */
     protected void initBundle(final Bundle bundle) {
+    	
         bundle.addListener(new IDeltaListener() {
             public void add(DeltaEvent event) {
                 //TODO figure out how to filter event that do not add keys.
                 //Probably not necessary with plugin rewrite.
-                String key = ((BundleEntry) event.receiver()).getKey();
-                addKey(key);
+            	if(isProperty((BundleEntry) event.receiver())) {
+            		 String key = ((BundleEntry) event.receiver()).getKey();
+                     addKey(key);
+            	}
             }
             public void remove(DeltaEvent event) {
-                String key = ((BundleEntry) event.receiver()).getKey();
-                Collection<BundleEntry> entries = 
-                        bundleGroup.getBundleEntries(key);
-                if (entries.size() == 0) {
-                    removeKey(((BundleEntry) event.receiver()).getKey());
-                }
+            	
+            	if(isProperty((BundleEntry) event.receiver())) {
+            	
+	                String key = ((BundleEntry) event.receiver()).getKey();
+	                Collection<BundleEntry> entries = 
+	                        bundleGroup.getBundleEntries(key);
+	                if (entries.size() == 0) {
+	                    removeKey(((BundleEntry) event.receiver()).getKey());
+	                }
+                
+            	}
+            	
             }
             public void modify(DeltaEvent event) {
                 //TODO figure out how to filter event that do not modify keys.
                 //Probably not necessary with plugin rewrite.
-                String key = ((BundleEntry) event.receiver()).getKey();
-                modifyKey(key);
+            	if(isProperty((BundleEntry) event.receiver())) {
+            		String key = ((BundleEntry) event.receiver()).getKey();
+            		modifyKey(key);
+            	}
             }
             public void select(DeltaEvent event) {
             }
+            
         });
+        
+    }
+    
+    private boolean isProperty(BundleEntry entry) {
+    	return entry instanceof BundleKeyValueEntry;
     }
 
     /**
@@ -245,20 +267,21 @@ public class KeyTree extends Model implements IKeyTreeVisitable {
      * Loads all key tree items, base on bundle group.
      */
     private final void load() {
-        for (Iterator<String> iter = bundleGroup.getKeys().iterator();
-                iter.hasNext();) {
-            /*
-             * Do not call "fireAdd" method from here for extreme performance
-             * improvement.  This is not an addition in the sense that we are
-             * laying out existing keys, not adding any new ones.  We will
-             * refresh the whole tree after we are done looping.
-             */
-            updater.addKey(this, iter.next());
-        }
-        if (getFilter() != null)
+    	
+    	for(final String key : bundleGroup.getKeys()) {
+    		if(!key.startsWith(BundleValueEntry.PREFIX)
+    				&& !key.startsWith("#") 
+    				&& !key.startsWith("!")) {
+				updater.addKey(this, key);
+			}
+    	}
+    	
+        if (getFilter() != null) {
             filterKeyItems(getFilter());
-        
+        }
+            
         fireAdd(this);
+        
     }
     
     private String filter;

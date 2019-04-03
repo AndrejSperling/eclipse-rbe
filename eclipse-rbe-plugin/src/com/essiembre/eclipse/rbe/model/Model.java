@@ -64,7 +64,7 @@ public abstract class Model {
      * Fires a "modify" event.
      * @param modified object modified
      */
-    protected void fireModify(Object modified) {
+    public void fireModify(Object modified) {
         for (Iterator<IDeltaListener> iter = 
                 listeners.iterator(); iter.hasNext();) {
             IDeltaListener listener = iter.next();

@@ -43,8 +43,9 @@ import org.eclipse.swt.widgets.Control;
 import com.essiembre.eclipse.rbe.model.DeltaEvent;
 import com.essiembre.eclipse.rbe.model.IDeltaListener;
 import com.essiembre.eclipse.rbe.model.bundle.Bundle;
-import com.essiembre.eclipse.rbe.model.bundle.BundleEntry;
 import com.essiembre.eclipse.rbe.model.bundle.BundleGroup;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleEntry;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleKeyValueEntry;
 import com.essiembre.eclipse.rbe.model.tree.KeyTree;
 import com.essiembre.eclipse.rbe.model.tree.KeyTreeItem;
 import com.essiembre.eclipse.rbe.model.workbench.RBEPreferences;
@@ -475,26 +476,33 @@ public class I18nPage extends ScrolledComposite {
                                 % length);
                 int j = (i == 0 ? activeLocaleIndex : (searchForward ? 0
                         : locales.size() - 1));
+                
                 while (j < locales.size() && j >= 0) {
                     Locale locale = locales.get(j);
                     Bundle bundle = bundleGroup.getBundle(locale);
                     BundleEntry value = bundle.getEntry(key);
-                    if (value != null && value.getValue() != null) {
-                        IRegion region = find(value.getValue(), findString,
-                                searchForward ? 0
-                                        : value.getValue().length() - 1,
-                                searchForward, caseSensitive, wholeWord,
-                                regExSearch);
-                        if (region != null) {
-                            keysComposite.selectKeyTreeItem(key);
-                            focusBundleEntryComposite(locale);
-                            StyledText textWidget = activeEntry.getTextViewer()
-                                    .getTextWidget();
-                            textWidget.setSelection(region.getOffset(),
-                                    region.getOffset() + region.getLength());
-                            return region.getOffset();
+                    
+                    if(value instanceof BundleKeyValueEntry) {
+                    
+                    	String v = ((BundleKeyValueEntry) value).getValue();
+                    
+                    	if (value != null && v != null) {
+                            IRegion region = find(v, findString,
+                                    searchForward ? 0 : v.length() - 1,
+                                    searchForward, caseSensitive, wholeWord,
+                                    regExSearch);
+                            if (region != null) {
+                                keysComposite.selectKeyTreeItem(key);
+                                focusBundleEntryComposite(locale);
+                                StyledText textWidget = activeEntry.getTextViewer()
+                                        .getTextWidget();
+                                textWidget.setSelection(region.getOffset(),
+                                        region.getOffset() + region.getLength());
+                                return region.getOffset();
+                            }
                         }
                     }
+                    
                     if (searchForward)
                         ++j;
                     else

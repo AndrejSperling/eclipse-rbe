@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +28,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import com.essiembre.eclipse.rbe.model.Model;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleEntry;
 
 
 /**
@@ -38,7 +41,7 @@ public class BundleGroup extends Model implements IBundleVisitable {
     /** Bundles forming the group (key=Locale; value=Bundle). */
     private final Map<Locale, Bundle> bundles = new HashMap<>();
     
-    private final SortedSet<String> keys = new TreeSet<String>();
+    private final Set<String> keys = new LinkedHashSet<String>();
     
     /**
      * Constructor.
@@ -106,13 +109,12 @@ public class BundleGroup extends Model implements IBundleVisitable {
     public void addBundleEntry(Locale locale, BundleEntry bundleEntry) {
         Bundle bundle = getBundle(locale);
         if (bundle != null) {
-            BundleEntry existingEntry = 
-                    getBundleEntry(locale, bundleEntry.getKey());
+            BundleEntry existingEntry = getBundleEntry(locale, bundleEntry.getKey());
             if (!bundleEntry.equals(existingEntry)) {
                 bundleEntry.setBundle(bundle);
                 bundleEntry.setLocale(locale);
                 bundle.addEntry(bundleEntry);
-                refreshKeys();
+                //refreshKeys();
                 fireModify(bundle);
             }
         }
@@ -124,12 +126,15 @@ public class BundleGroup extends Model implements IBundleVisitable {
      * @param key
      */
     public void addKey(String key) {
-        for (Iterator<Locale> iter = bundles.keySet().iterator(); 
-                iter.hasNext();) {
-            Locale locale = iter.next();
-            BundleEntry entry = new BundleEntry(key, null, null);
-            addBundleEntry(locale, entry);
-        }
+    	
+    	// TODO-as nur Key hinzufügen, wenn etwas steht
+    	
+//        for (Iterator<Locale> iter = bundles.keySet().iterator(); 
+//                iter.hasNext();) {
+//            Locale locale = iter.next();
+//            BundleEntry entry = new BundleEntry(key, null, null);
+//            addBundleEntry(locale, entry);
+//        }
     }
 
     /**
@@ -306,7 +311,7 @@ public class BundleGroup extends Model implements IBundleVisitable {
      * Gets all resource bundle keys.
      * @return <code>List</code> of resource bundle keys.
      */
-    public SortedSet<String> getKeys() {
+    public Set<String> getKeys() {
         return keys;
     }
 

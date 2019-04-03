@@ -18,8 +18,8 @@ package com.essiembre.eclipse.rbe.model.bundle.visitors;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import com.essiembre.eclipse.rbe.model.bundle.BundleEntry;
 import com.essiembre.eclipse.rbe.model.bundle.BundleVisitorAdapter;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleEntry;import com.essiembre.eclipse.rbe.model.bundle.entries.BundleKeyValueEntry;
 
 /**
  * Finds bundle entries having values identical to the bundle entry given
@@ -41,18 +41,21 @@ public class DuplicateValuesVisitor extends BundleVisitorAdapter {
     /**
      * @see com.essiembre.eclipse.rbe.model.bundle.IBundleVisitor
      *         #visitBundleEntry(
-     *                 com.essiembre.eclipse.rbe.model.bundle.BundleEntry,
+     *                 com.essiembre.eclipse.rbe.model.bundle.entries.BundleEntry,
      *                 java.lang.Object)
      */
     public void visitBundleEntry(BundleEntry entry, Object passAlongArgument) {
         
-        BundleEntry entryToMatch = (BundleEntry) passAlongArgument;
-        if (entry != entryToMatch
-                && entry != null && entryToMatch != null
-                && entry.getValue().length() > 0
-                && entry.getValue().equals(entryToMatch.getValue())) {
-            duplicates.add(entry);
-        }
+    	// TODO-as 
+    	
+//        BundleEntry entryToMatch = (BundleEntry) passAlongArgument;
+//        if(entryToMatch instaceof BundleKeyValueEntry)
+//        if (entry != entryToMatch
+//                && entry != null && entryToMatch != null
+//                && entry.getValue().length() > 0
+//                && entry.getValue().equals(entryToMatch.getValue())) {
+//            duplicates.add(entry);
+//        }
     }
     
     /**

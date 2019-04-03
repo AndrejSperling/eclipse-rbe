@@ -17,8 +17,9 @@ package com.essiembre.eclipse.rbe.model.tree.visitors;
 
 import java.util.Collection;
 
-import com.essiembre.eclipse.rbe.model.bundle.BundleEntry;
 import com.essiembre.eclipse.rbe.model.bundle.BundleGroup;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleEntry;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleKeyValueEntry;
 import com.essiembre.eclipse.rbe.model.tree.KeyTreeItem;
 import com.essiembre.eclipse.rbe.model.tree.KeyTreeVisitorAdapter;
 
@@ -49,10 +50,14 @@ public class IsCommentedVisitor extends KeyTreeVisitorAdapter {
             Collection<BundleEntry> entries = bundleGroup.getBundleEntries(key);
             int commentedCount = 0;
             for (BundleEntry entry : entries) {
-                if (entry != null && entry.isCommented()) {
+            	
+                if (entry != null 
+                		&& entry instanceof BundleKeyValueEntry 
+                		&& ((BundleKeyValueEntry) entry).isCommented()) {
                     hasOneCommented = true;
                     commentedCount++;
                 }
+                
             }
             if (commentedCount == entries.size()) {
                 areAllCommented = true;

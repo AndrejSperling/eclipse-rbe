@@ -17,8 +17,9 @@ package com.essiembre.eclipse.rbe.model.tree.visitors;
 
 import java.util.Collection;
 
-import com.essiembre.eclipse.rbe.model.bundle.BundleEntry;
 import com.essiembre.eclipse.rbe.model.bundle.BundleGroup;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleEntry;
+import com.essiembre.eclipse.rbe.model.bundle.entries.BundleKeyValueEntry;
 import com.essiembre.eclipse.rbe.model.tree.KeyTreeItem;
 import com.essiembre.eclipse.rbe.model.tree.KeyTreeVisitorAdapter;
 
@@ -103,7 +104,7 @@ public class IsMissingValueVisitor extends KeyTreeVisitorAdapter {
                 return true;
             }
             for (BundleEntry entry : entries) {
-                if (entry == null || entry.getValue().length() == 0) {
+                if (entry == null || (entry instanceof BundleKeyValueEntry && ((BundleKeyValueEntry) entry).getValue().length() == 0)) {
                     return true;
                 }
             }
